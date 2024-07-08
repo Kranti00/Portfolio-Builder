@@ -24,5 +24,9 @@ This is an enhanced portfolio builder application built using React and Redux fo
 
 1. **Clone the repository**:
    ```bash
-   git clone <https://github.com/Kranti00/Portfolio-Builder.git>
-   cd enhanced-portfolio-builder
+   git clone https://github.com/Kranti00/Portfolio-Builder.git
+   cd Portfolio-Builder
+
+### Deployed link
+
+- https://668bf18f6d2451387e037bd5--zippy-nasturtium-2acdca.netlify.app/
