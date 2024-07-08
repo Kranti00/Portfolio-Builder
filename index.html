@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Builder</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <!-- React and ReactDOM -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js" crossorigin></script>
+    <!-- Redux -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.1.0/redux.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/7.2.4/react-redux.min.js" crossorigin></script>
+    <!-- Babel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { createStore } = Redux;
+        const { Provider, useDispatch, useSelector } = ReactRedux;
+
+        // Actions
+        const updateField = (field, value) => ({
+            type: 'UPDATE_FIELD',
+            payload: { field, value },
+        });
+
+        const savePortfolio = (portfolio) => ({
+            type: 'SAVE_PORTFOLIO',
+            payload: portfolio,
+        });
+
+        const deletePortfolio = (index) => ({
+            type: 'DELETE_PORTFOLIO',
+            payload: index,
+        });
+
+        const selectPortfolio = (index) => ({
+            type: 'SELECT_PORTFOLIO',
+            payload: index,
+        });
+
+        // Reducer
+        const initialState = {
+            portfolio: {
+                name: '',
+                designation: '',
+                location: '',
+                email: '',
+                phone: '',
+                hobbies: '',
+                projects: '',
+                experience: '',
+                bio: '',
+                backgroundColor: '#ffffff',
+                foregroundColor: '#000000',
+                gradientType: 'solid',
+                backgroundImage: '',
+                profileImage: '',
+            },
+            portfolios: JSON.parse(localStorage.getItem('portfolios')) || [],
+        };
+
+        const rootReducer = (state = initialState, action) => {
+            switch (action.type) {
+                case 'UPDATE_FIELD':
+                    return {
+                        ...state,
+                        portfolio: {
+                            ...state.portfolio,
+                            [action.payload.field]: action.payload.value,
+                        },
+                    };
+                case 'SAVE_PORTFOLIO':
+                    const updatedPortfolios = [...state.portfolios, action.payload];
+                    localStorage.setItem('portfolios', JSON.stringify(updatedPortfolios));
+                    return {
+                        ...state,
+                        portfolios: updatedPortfolios,
+                    };
+                case 'DELETE_PORTFOLIO':
+                    const filteredPortfolios = state.portfolios.filter((_, index) => index !== action.payload);
+                    localStorage.setItem('portfolios', JSON.stringify(filteredPortfolios));
+                    return {
+                        ...state,
+                        portfolios: filteredPortfolios,
+                    };
+                case 'SELECT_PORTFOLIO':
+                    return {
+                        ...state,
+                        portfolio: state.portfolios[action.payload],
+                    };
+                default:
+                    return state;
+            }
+        };
+
+        const store = createStore(rootReducer);
+
+        // Portfolio Template Component
+        const PortfolioTemplate = ({ portfolio }) => (
+            <div className="p-4 rounded shadow-md bg-white" style={{
+                backgroundColor: portfolio.backgroundColor,
+                color: portfolio.foregroundColor,
+                backgroundImage: portfolio.backgroundImage ? `url(${portfolio.backgroundImage})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+            }}>
+                {portfolio.profileImage && (
+                    <img src={portfolio.profileImage} alt="Profile Picture" className="w-24 h-24 rounded-full mx-auto mt-4" />
+                )}
+                <div className="space-y-2 mt-4 text-center">
+                    <h3 className="text-xl font-semibold">{portfolio.name}</h3>
+                    <p>{portfolio.designation}</p>
+                    <p>{portfolio.location}</p>
+                    <p>{portfolio.email}</p>
+                    <p>{portfolio.phone}</p>
+                    <p>{portfolio.hobbies}</p>
+                    <p>{portfolio.projects}</p>
+                    <p>{portfolio.experience}</p>
+                    <p>{portfolio.bio}</p>
+                </div>
+            </div>
+        );
+
+        // App Component
+        const App = () => {
+            const dispatch = useDispatch();
+            const { portfolio, portfolios } = useSelector(state => state);
+
+            const handleChange = (field, value) => {
+                dispatch(updateField(field, value));
+            };
+
+            const handleSave = () => {
+                dispatch(savePortfolio(portfolio));
+            };
+
+            const handleDelete = (index) => {
+                dispatch(deletePortfolio(index));
+            };
+
+            const handleSelect = (index) => {
+                dispatch(selectPortfolio(index));
+            };
+
+            const handleUploadImage = (field, event) => {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onloadend = () => {
+                    dispatch(updateField(field, reader.result));
+                };
+            };
+
+            return (
+                <div className="container mx-auto p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-4 bg-white p-4 rounded shadow-md">
+                            <h2 className="text-2xl font-bold">Portfolio Builder</h2>
+                            <div>
+                                <label className="block font-medium">Change Theme</label>
+                                <input type="color" value={portfolio.backgroundColor} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="block w-full mt-1" />
+                                <input type="color" value={portfolio.foregroundColor} onChange={(e) => handleChange('foregroundColor', e.target.value)} className="block w-full mt-1" />
+                                <select value={portfolio.gradientType} onChange={(e) => handleChange('gradientType', e.target.value)} className="block w-full mt-1">
+                                    <option value="solid">Solid</option>
+                                    <option value="linear">Linear Gradient</option>
+                                    <option value="radial">Radial Gradient</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block font-medium">Upload Background Image</label>
+                                <input type="file" accept="image/*" onChange={(e) => handleUploadImage('backgroundImage', e)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Upload Profile Picture</label>
+                                <input type="file" accept="image/*" onChange={(e) => handleUploadImage('profileImage', e)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Name</label>
+                                <input type="text" value={portfolio.name} onChange={(e) => handleChange('name', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Designation</label>
+                                <input type="text" value={portfolio.designation} onChange={(e) => handleChange('designation', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Location</label>
+                                <input type="text" value={portfolio.location} onChange={(e) => handleChange('location', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Email</label>
+                                <input type="email" value={portfolio.email} onChange={(e) => handleChange('email', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Phone</label>
+                                <input type="tel" value={portfolio.phone} onChange={(e) => handleChange('phone', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Hobbies</label>
+                                <input type="text" value={portfolio.hobbies} onChange={(e) => handleChange('hobbies', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Projects</label>
+                                <textarea value={portfolio.projects} onChange={(e) => handleChange('projects', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Experience</label>
+                                <textarea value={portfolio.experience} onChange={(e) => handleChange('experience', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <div>
+                                <label className="block font-medium">Bio</label>
+                                <textarea value={portfolio.bio} onChange={(e) => handleChange('bio', e.target.value)} className="block w-full mt-1" />
+                            </div>
+                            <button onClick={handleSave} className="bg-blue-500 text-white py-2 px-4 rounded mt-4">Save Portfolio</button>
+                        </div>
+                        <div className="col-span-2">
+                            <PortfolioTemplate portfolio={portfolio} />
+                        </div>
+                    </div>
+                    <div className="mt-8">
+                        <h3 className="text-xl font-bold">Saved Portfolios</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            {portfolios.map((p, index) => (
+                                <div key={index} className="p-4 border rounded shadow-md bg-white">
+                                    <PortfolioTemplate portfolio={p} />
+                                    <div className="mt-4 text-center">
+                                        <button onClick={() => handleSelect(index)} className="bg-green-500 text-white py-2 px-4 rounded mr-2">Select</button>
+                                        <button onClick={() => handleDelete(index)} className="bg-red-500 text-white py-2 px-4 rounded">Delete</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(
+            <Provider store={store}>
+                <App />
+            </Provider>,
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
